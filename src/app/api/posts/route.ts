@@ -6,6 +6,7 @@ import { posts, users } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { created, handleError, ok } from "@/lib/api-helpers";
 import { slugify } from "@/lib/utils";
+import { broadcast } from "@/lib/realtime";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +20,9 @@ export async function GET(req: NextRequest) {
     const page = Math.max(Number(searchParams.get("page") ?? 1), 1);
     const offset = (page - 1) * limit;
 
+    const includeAll = searchParams.get("status") === "all";
     const conditions = [];
+    if (!includeAll) conditions.push(eq(posts.status, "published"));
     if (type) conditions.push(eq(posts.type, type as "news" | "business" | "event"));
     if (category && category !== "All" && category !== "all")
       conditions.push(eq(posts.category, category));
@@ -86,6 +89,11 @@ const createSchema = z.object({
   imageUrl: z.string().url().optional().or(z.literal("")),
   videoUrl: z.string().url().optional().or(z.literal("")),
   category: z.string().min(1),
+  subCategory: z.string().optional(),
+  tags: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  status: z.enum(["draft", "pending", "published"]).default("published"),
   type: z.enum(["news", "business", "event"]).default("news"),
   featured: z.boolean().optional(),
 });
@@ -110,11 +118,37 @@ export async function POST(req: NextRequest) {
         imageUrl: data.imageUrl || null,
         videoUrl: data.videoUrl || null,
         category: data.category,
+        subCategory: data.subCategory || null,
+        tags: data.tags || null,
+        metaTitle: data.metaTitle || null,
+        metaDescription: data.metaDescription || null,
+        status: data.status,
         type: data.type,
         featured: data.featured ?? false,
         authorId: admin.id,
       })
       .returning();
+
+    if (post.status === "published") {
+      broadcast("new_post", {
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt,
+        imageUrl: post.imageUrl,
+        videoUrl: post.videoUrl,
+        category: post.category,
+        type: post.type,
+        views: post.views,
+        likes: post.likes,
+        commentsCount: post.commentsCount,
+        featured: post.featured,
+        createdAt: post.createdAt,
+        authorId: post.authorId,
+        authorName: admin.fullName,
+        authorAvatar: admin.avatar ?? null,
+      });
+    }
 
     return created({ post });
   } catch (err) {

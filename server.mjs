@@ -43,6 +43,9 @@ const io = new SocketServer(server, {
   cors: { origin: true, credentials: true },
 });
 
+// Expose io so Next.js API routes (same process) can broadcast events.
+globalThis.__sandistechIo = io;
+
 // Track online users: userId -> Set of socket ids
 const online = new Map();
 

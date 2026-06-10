@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Send,
   Info,
+  HelpCircle,
 } from "lucide-react";
 import { postJSON } from "@/lib/client";
 import { useStore } from "@/store/useStore";
@@ -44,36 +45,87 @@ export default function SupportPage() {
         <p className="text-sm text-muted">We&apos;re here to help. Reach out anytime.</p>
       </div>
 
-      <Link
-        href="/chat"
-        className="card flex items-center gap-3 p-4 transition hover:shadow-lg"
-      >
-        <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-600 text-white">
-          <MessageSquare className="h-5 w-5" />
-        </span>
-        <div className="flex-1">
-          <p className="font-bold">Live Community Chat</p>
-          <p className="text-sm text-muted">Chat with members & admins in real time</p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg">
+        <div className="flex items-center gap-3">
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-white/20">
+            <MessageSquare className="h-6 w-6" />
+          </span>
+          <div className="flex-1">
+            <p className="text-lg font-extrabold">Live Chat</p>
+            <p className="flex items-center gap-1.5 text-sm text-white/80">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+              Support team is online
+            </p>
+          </div>
         </div>
-        <span className="text-brand-600">→</span>
-      </Link>
+        <Link
+          href="/chat"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 font-bold text-brand-700 transition hover:bg-white/90"
+        >
+          <MessageSquare className="h-4 w-4" /> Start Chat
+        </Link>
+      </div>
 
-      <ContactForm />
-      <FeedbackForm />
+      <Collapsible icon={<Mail className="h-5 w-5 text-brand-600" />} title="Contact Form" subtitle="Send us a message">
+        <ContactForm />
+      </Collapsible>
 
-      <section>
-        <h2 className="mb-3 text-lg font-extrabold">Frequently Asked Questions</h2>
+      <Collapsible icon={<Star className="h-5 w-5 text-amber-500" />} title="Feedback Form" subtitle="Rate your experience">
+        <FeedbackForm />
+      </Collapsible>
+
+      <Collapsible icon={<HelpCircle className="h-5 w-5 text-purple-600" />} title="FAQ" subtitle="Frequently asked questions" defaultOpen>
         <div className="space-y-2">
           {FAQ.map((item, i) => (
             <FaqItem key={i} {...item} />
           ))}
         </div>
-      </section>
+      </Collapsible>
 
-      <Link href="/about" className="card flex items-center gap-3 p-4">
-        <Info className="h-5 w-5 text-brand-600" />
-        <span className="font-semibold">About Us</span>
+      <Link href="/about" className="card-soft flex items-center gap-3 p-4 transition hover:shadow-md">
+        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-slate-800">
+          <Info className="h-5 w-5" />
+        </span>
+        <div className="flex-1">
+          <p className="font-semibold">About Us</p>
+          <p className="text-sm text-muted">Learn more about SandisTech News</p>
+        </div>
+        <ChevronDown className="h-5 w-5 -rotate-90 text-muted" />
       </Link>
+    </div>
+  );
+}
+
+function Collapsible({
+  icon,
+  title,
+  subtitle,
+  defaultOpen = false,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="card-soft overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-3 p-4 text-left"
+      >
+        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 dark:bg-slate-800">
+          {icon}
+        </span>
+        <div className="flex-1">
+          <p className="font-semibold">{title}</p>
+          <p className="text-sm text-muted">{subtitle}</p>
+        </div>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-muted transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="border-t p-4">{children}</div>}
     </div>
   );
 }
@@ -104,10 +156,7 @@ function ContactForm() {
   }
 
   return (
-    <section className="card p-4">
-      <h2 className="mb-3 flex items-center gap-2 text-lg font-extrabold">
-        <Mail className="h-5 w-5 text-brand-600" /> Contact Us
-      </h2>
+    <div>
       {status === "done" ? (
         <p className="rounded-xl bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
           Thanks! Your message has been sent. We&apos;ll get back to you soon.
@@ -150,7 +199,7 @@ function ContactForm() {
           </button>
         </form>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -177,10 +226,7 @@ function FeedbackForm() {
   }
 
   return (
-    <section className="card p-4">
-      <h2 className="mb-3 flex items-center gap-2 text-lg font-extrabold">
-        <Star className="h-5 w-5 text-amber-500" /> Share Feedback
-      </h2>
+    <div>
       {status === "done" ? (
         <p className="rounded-xl bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
           Thank you for your feedback!
@@ -224,17 +270,17 @@ function FeedbackForm() {
           </button>
         </form>
       )}
-    </section>
+    </div>
   );
 }
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="card overflow-hidden">
+    <div className="rounded-xl border">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 p-4 text-left font-semibold"
+        className="flex w-full items-center justify-between gap-2 p-3 text-left text-sm font-semibold"
       >
         {q}
         <ChevronDown className={`h-5 w-5 shrink-0 transition ${open ? "rotate-180" : ""}`} />

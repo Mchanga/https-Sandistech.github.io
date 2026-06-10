@@ -54,6 +54,9 @@ export interface Business {
   website: string | null;
   category: string;
   imageUrl: string | null;
+  logo: string | null;
+  rating: number;
+  reviews: number;
 }
 
 export interface EventItem {

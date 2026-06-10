@@ -11,17 +11,12 @@ import {
   ChevronRight,
   Search,
 } from "lucide-react";
-import { CategoryChips, EmptyState, Spinner } from "@/components/ui/Common";
+import EventCard from "@/components/EventCard";
+import { SegTabs, EmptyState, Spinner } from "@/components/ui/Common";
 import { getJSON } from "@/lib/client";
 import type { EventItem } from "@/lib/types";
 
-const CATEGORIES = [
-  "All",
-  "Conferences",
-  "Concerts",
-  "Sports Events",
-  "Calendar Events",
-];
+const CATEGORIES = ["All", "Conferences", "Concerts", "Sports Events"];
 
 export default function EventsPage() {
   const [category, setCategory] = useState("All");
@@ -75,7 +70,7 @@ export default function EventsPage() {
         />
       </div>
 
-      <CategoryChips categories={CATEGORIES} active={category} onChange={setCategory} />
+      <SegTabs tabs={CATEGORIES} active={category} onChange={setCategory} />
 
       <div className="mt-3">
         {events === null ? (
@@ -100,37 +95,6 @@ export default function EventsPage() {
   );
 }
 
-function EventCard({ event: e }: { event: EventItem }) {
-  const date = new Date(e.startDate);
-  return (
-    <Link href={`/events/${e.id}`} className="card overflow-hidden transition hover:shadow-lg animate-fade-in">
-      {e.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={e.imageUrl} alt={e.title} className="aspect-[16/9] w-full object-cover" />
-      )}
-      <div className="flex gap-3 p-4">
-        <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-600 text-white">
-          <span className="text-lg font-black leading-none">{date.getDate()}</span>
-          <span className="text-[10px] font-semibold uppercase">
-            {date.toLocaleString("en", { month: "short" })}
-          </span>
-        </div>
-        <div className="min-w-0">
-          <span className="inline-block rounded-full muted px-2 py-0.5 text-[11px] font-semibold">
-            {e.category}
-          </span>
-          <h3 className="mt-1 line-clamp-2 font-bold">{e.title}</h3>
-          {e.location && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-muted">
-              <MapPin className="h-3.5 w-3.5" /> {e.location}
-            </p>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 function CalendarView({ events }: { events: EventItem[] }) {
   const [cursor, setCursor] = useState(() => new Date());
   const year = cursor.getFullYear();
@@ -149,68 +113,104 @@ function CalendarView({ events }: { events: EventItem[] }) {
     return map;
   }, [events, year, month]);
 
+  const upcoming = useMemo(
+    () =>
+      [...events]
+        .filter((e) => new Date(e.startDate) >= new Date(new Date().toDateString()))
+        .sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
+        .slice(0, 5),
+    [events]
+  );
+
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  const isThisMonth = today.getFullYear() === year && today.getMonth() === month;
   const cells: (number | null)[] = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
   return (
-    <div className="card p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="btn-ghost !px-2">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <p className="font-bold">
-          {cursor.toLocaleString("en", { month: "long", year: "numeric" })}
-        </p>
-        <button onClick={() => setCursor(new Date(year, month + 1, 1))} className="btn-ghost !px-2">
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-muted">
-        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-          <div key={i} className="py-1">
-            {d}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((day, i) => {
-          const dayEvents = day ? byDay.get(String(day)) : undefined;
-          return (
-            <div
-              key={i}
-              className={`min-h-[44px] rounded-lg p-1 text-xs ${day ? "muted" : ""}`}
-            >
-              {day && (
-                <>
-                  <span className="font-semibold">{day}</span>
-                  {dayEvents && (
-                    <div className="mt-0.5 space-y-0.5">
-                      {dayEvents.slice(0, 2).map((e) => (
-                        <Link
-                          key={e.id}
-                          href={`/events/${e.id}`}
-                          className="block truncate rounded bg-brand-600 px-1 py-0.5 text-[9px] text-white"
-                        >
-                          {e.title}
-                        </Link>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <span className="text-[9px] text-brand-600">
-                          +{dayEvents.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
+    <div className="space-y-4">
+      <div className="card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="btn-ghost !px-2">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <p className="font-bold">
+            {cursor.toLocaleString("en", { month: "long", year: "numeric" })}
+          </p>
+          <button onClick={() => setCursor(new Date(year, month + 1, 1))} className="btn-ghost !px-2">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-muted">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+            <div key={d} className="py-1">
+              {d}
             </div>
-          );
-        })}
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((day, i) => {
+            const dayEvents = day ? byDay.get(String(day)) : undefined;
+            const isToday = isThisMonth && day === today.getDate();
+            return (
+              <div
+                key={i}
+                className={`relative grid min-h-[40px] place-items-center rounded-lg text-xs ${
+                  isToday ? "bg-brand-600 font-bold text-white" : day ? "muted" : ""
+                }`}
+              >
+                {day && <span>{day}</span>}
+                {dayEvents && (
+                  <span
+                    className={`absolute bottom-1 h-1.5 w-1.5 rounded-full ${
+                      isToday ? "bg-white" : "bg-brand-600"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
+
+      <section>
+        <h2 className="mb-2 text-lg font-extrabold">Upcoming Events</h2>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-muted">No upcoming events.</p>
+        ) : (
+          <div className="space-y-2">
+            {upcoming.map((e) => {
+              const d = new Date(e.startDate);
+              return (
+                <Link
+                  key={e.id}
+                  href={`/events/${e.id}`}
+                  className="card-soft flex items-center gap-3 p-2"
+                >
+                  <div className="grid h-14 w-14 shrink-0 flex-col place-items-center rounded-xl bg-brand-600 text-white">
+                    <span className="text-lg font-black leading-none">{d.getDate()}</span>
+                    <span className="text-[10px] font-semibold uppercase">
+                      {d.toLocaleString("en", { month: "short" })}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="line-clamp-1 font-bold">{e.title}</h3>
+                    {e.location && (
+                      <p className="flex items-center gap-1 text-xs text-muted">
+                        <MapPin className="h-3.5 w-3.5" /> {e.location}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

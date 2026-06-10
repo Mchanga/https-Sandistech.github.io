@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Newspaper } from "lucide-react";
-import PostCard from "@/components/PostCard";
-import { CategoryChips, CardSkeleton, EmptyState, Spinner } from "@/components/ui/Common";
+import { Search, Newspaper, SlidersHorizontal, Check } from "lucide-react";
+import { PostHero, PostRow } from "@/components/PostCard";
+import { SegTabs, CardSkeleton, EmptyState, Spinner } from "@/components/ui/Common";
 import { getJSON } from "@/lib/client";
 import type { PostListItem } from "@/lib/types";
 
 const CATEGORIES = [
-  "All",
+  "All News",
   "Sports",
   "Education",
   "Music",
@@ -21,7 +21,7 @@ const CATEGORIES = [
 
 const SORTS = [
   { value: "recent", label: "Latest" },
-  { value: "popular", label: "Popular" },
+  { value: "popular", label: "Most Viewed" },
   { value: "liked", label: "Most Liked" },
 ];
 
@@ -29,8 +29,9 @@ const PAGE_SIZE = 8;
 
 export default function NewsFeed() {
   const params = useSearchParams();
-  const [category, setCategory] = useState("All");
+  const [category, setCategory] = useState("All News");
   const [sort, setSort] = useState(params.get("sort") ?? "recent");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [posts, setPosts] = useState<PostListItem[]>([]);
@@ -53,14 +54,13 @@ export default function NewsFeed() {
         page: String(p),
         limit: String(PAGE_SIZE),
       });
-      if (category !== "All") q.set("category", category);
+      if (category !== "All News") q.set("category", category);
       if (debounced) q.set("search", debounced);
       return `/api/posts?${q.toString()}`;
     },
     [category, sort, debounced]
   );
 
-  // reset on filter change
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -77,6 +77,21 @@ export default function NewsFeed() {
       active = false;
     };
   }, [buildUrl]);
+
+  // realtime: prepend newly published posts
+  useEffect(() => {
+    const onNew = (e: Event) => {
+      const post = (e as CustomEvent<PostListItem>).detail;
+      if (!post || post.type !== "news") return;
+      if (category !== "All News" && post.category !== category) return;
+      setPosts((prev) =>
+        prev.some((p) => p.id === post.id) ? prev : [post, ...prev]
+      );
+    };
+    window.addEventListener("sandistech:new_post", onNew as EventListener);
+    return () =>
+      window.removeEventListener("sandistech:new_post", onNew as EventListener);
+  }, [category]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore || loading) return;
@@ -105,40 +120,61 @@ export default function NewsFeed() {
 
   return (
     <div>
-      <div className="mb-1 flex items-center gap-2">
+      <div className="mb-2 flex items-center gap-2">
         <Newspaper className="h-6 w-6 text-brand-600" />
         <h1 className="text-2xl font-extrabold tracking-tight">News</h1>
-      </div>
-      <p className="mb-3 text-sm text-muted">Breaking stories, updated in real time.</p>
-
-      <div className="mb-2 flex items-center gap-2 rounded-xl border px-3">
-        <Search className="h-4 w-4 text-muted" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search news…"
-          className="h-11 flex-1 bg-transparent text-sm outline-none"
-        />
+        <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-green-600">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" /> Live
+        </span>
       </div>
 
-      <CategoryChips categories={CATEGORIES} active={category} onChange={setCategory} />
+      <SegTabs tabs={CATEGORIES} active={category} onChange={setCategory} />
 
-      <div className="no-scrollbar -mx-3 mt-1 flex gap-2 overflow-x-auto px-3 pb-1">
-        {SORTS.map((s) => (
-          <button
-            key={s.value}
-            onClick={() => setSort(s.value)}
-            className={`chip ${sort === s.value ? "chip-active" : "muted border-transparent"}`}
-          >
-            {s.label}
-          </button>
-        ))}
+      <div className="relative mt-2 flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 rounded-xl border px-3">
+          <Search className="h-4 w-4 text-muted" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search news…"
+            className="h-11 flex-1 bg-transparent text-sm outline-none"
+          />
+        </div>
+        <button
+          onClick={() => setFilterOpen((v) => !v)}
+          aria-label="Filter"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border text-brand-600"
+        >
+          <SlidersHorizontal className="h-5 w-5" />
+        </button>
+        {filterOpen && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setFilterOpen(false)} />
+            <div className="card absolute right-0 top-12 z-40 w-48 overflow-hidden p-1 shadow-xl animate-fade-in">
+              <p className="px-3 py-1.5 text-xs font-semibold uppercase text-muted">
+                Sort by
+              </p>
+              {SORTS.map((s) => (
+                <button
+                  key={s.value}
+                  onClick={() => {
+                    setSort(s.value);
+                    setFilterOpen(false);
+                  }}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  {s.label}
+                  {sort === s.value && <Check className="h-4 w-4 text-brand-600" />}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mt-3 space-y-3">
         {loading ? (
           <>
-            <CardSkeleton />
             <CardSkeleton />
             <CardSkeleton />
           </>
@@ -149,7 +185,12 @@ export default function NewsFeed() {
             icon={<Newspaper className="h-8 w-8" />}
           />
         ) : (
-          posts.map((p) => <PostCard key={p.id} post={p} />)
+          <>
+            <PostHero post={posts[0]} />
+            {posts.slice(1).map((p) => (
+              <PostRow key={p.id} post={p} />
+            ))}
+          </>
         )}
       </div>
 

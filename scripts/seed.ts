@@ -174,6 +174,9 @@ async function main() {
         category: "Local Business Listings",
         imageUrl:
           "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&q=80",
+        logo: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=300&q=80",
+        rating: 4.7,
+        reviews: 128,
       },
       {
         name: "Serengeti Tours & Safaris",
@@ -186,6 +189,25 @@ async function main() {
         category: "Local Business Listings",
         imageUrl:
           "https://images.unsplash.com/photo-1516426122078-c23e76319801?w=1200&q=80",
+        logo: "https://images.unsplash.com/photo-1534177616072-ef7dc120449d?w=300&q=80",
+        rating: 4.9,
+        reviews: 342,
+      },
+      {
+        name: "Mwanza Tech Hub",
+        description:
+          "Co-working space and startup incubator supporting the next generation of founders.",
+        location: "Mwanza",
+        phone: "+255700000003",
+        whatsapp: "+255700000003",
+        email: "info@mwanzatech.co",
+        website: "mwanzatech.co",
+        category: "Market Updates",
+        imageUrl:
+          "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80",
+        logo: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&q=80",
+        rating: 4.5,
+        reviews: 64,
       },
     ]);
   }

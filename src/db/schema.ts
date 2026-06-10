@@ -4,6 +4,7 @@ import {
   text,
   varchar,
   integer,
+  real,
   boolean,
   timestamp,
   pgEnum,
@@ -41,6 +42,11 @@ export const posts = pgTable(
     imageUrl: text("image_url"),
     videoUrl: text("video_url"),
     category: varchar("category", { length: 100 }).notNull(),
+    subCategory: varchar("sub_category", { length: 100 }),
+    tags: text("tags"),
+    metaTitle: varchar("meta_title", { length: 255 }),
+    metaDescription: text("meta_description"),
+    status: varchar("status", { length: 20 }).notNull().default("published"),
     type: postTypeEnum("type").notNull().default("news"),
     authorId: integer("author_id")
       .notNull()
@@ -117,6 +123,9 @@ export const businesses = pgTable("businesses", {
   website: text("website"),
   category: varchar("category", { length: 100 }).notNull(),
   imageUrl: text("image_url"),
+  logo: text("logo"),
+  rating: real("rating").notNull().default(0),
+  reviews: integer("reviews").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

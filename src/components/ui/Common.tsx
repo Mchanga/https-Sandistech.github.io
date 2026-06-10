@@ -1,6 +1,40 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+
+export function Logo({ className }: { className?: string }) {
+  return (
+    <Link href="/" className={cn("flex items-center gap-1.5", className)}>
+      <span className="logo-mark">SandisTech</span>
+      <span className="logo-badge">News</span>
+    </Link>
+  );
+}
+
+export function SegTabs({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: string[];
+  active: string;
+  onChange: (t: string) => void;
+}) {
+  return (
+    <div className="no-scrollbar -mx-3 flex gap-1.5 overflow-x-auto px-3 py-1">
+      {tabs.map((t) => (
+        <button
+          key={t}
+          onClick={() => onChange(t)}
+          className={cn("seg", active === t ? "seg-active" : "hover:text-[rgb(var(--foreground))]")}
+        >
+          {t}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function CategoryChips({
   categories,

@@ -46,6 +46,8 @@ const schema = z.object({
   website: z.string().optional(),
   category: z.string().min(1),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  logo: z.string().url().optional().or(z.literal("")),
+  rating: z.coerce.number().min(0).max(5).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -58,6 +60,8 @@ export async function POST(req: NextRequest) {
         ...data,
         email: data.email || null,
         imageUrl: data.imageUrl || null,
+        logo: data.logo || null,
+        rating: data.rating ?? 0,
       })
       .returning();
     return created({ business: row });

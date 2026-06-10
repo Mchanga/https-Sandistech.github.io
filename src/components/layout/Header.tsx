@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { postJSON } from "@/lib/client";
+import { Logo } from "@/components/ui/Common";
 
 export default function Header() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-[rgb(var(--background))]/85 backdrop-blur-lg">
-      <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-3">
+      <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-3">
         <button
           aria-label="Open menu"
           onClick={() => toggleDrawer(true)}
@@ -50,68 +51,70 @@ export default function Header() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link href="/" className="flex items-center gap-2 mr-auto">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-sm font-black text-white">
-            S
-          </span>
-          <span className="text-base font-extrabold tracking-tight">
-            SandisTech<span className="text-brand-600"> News</span>
-          </span>
-        </Link>
+        <Logo className="mr-1" />
 
-        <Link
-          href="/about"
-          className="hidden sm:inline-flex btn-ghost !px-3 text-sm"
-        >
-          About Us
-        </Link>
-
+        {/* Desktop centered search */}
         <button
-          aria-label="Search"
           onClick={() => toggleSearch(true)}
-          className="btn-ghost !px-2"
+          className="mx-auto hidden h-9 w-full max-w-md items-center gap-2 rounded-xl border muted px-3 text-left text-sm text-muted md:flex"
         >
-          <Search className="h-5 w-5" />
+          <Search className="h-4 w-4" />
+          <span className="flex-1">Search news, business, events…</span>
         </button>
 
-        <button
-          aria-label="Toggle theme"
-          onClick={toggleTheme}
-          className="btn-ghost !px-2"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </button>
+        <div className="ml-auto flex items-center gap-1 md:ml-0">
+          <button
+            aria-label="Search"
+            onClick={() => toggleSearch(true)}
+            className="btn-ghost !px-2 md:hidden"
+          >
+            <Search className="h-5 w-5" />
+          </button>
 
-        <button
-          aria-label="Notifications"
-          onClick={() => toggleNotifications(true)}
-          className="btn-ghost relative !px-2"
-        >
-          <Bell className="h-5 w-5" />
-          {unread > 0 && (
-            <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-              {unread > 9 ? "9+" : unread}
-            </span>
-          )}
-        </button>
+          <button
+            aria-label="Toggle theme"
+            onClick={toggleTheme}
+            className="btn-ghost !px-2"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </button>
+
+          <button
+            aria-label="Notifications"
+            onClick={() => toggleNotifications(true)}
+            className="btn-ghost relative !px-2"
+          >
+            <Bell className="h-5 w-5" />
+            {unread > 0 && (
+              <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </button>
 
         {user ? (
           <div className="relative">
             <button
               aria-label="Profile menu"
               onClick={() => setMenuOpen((v) => !v)}
-              className="ml-1 grid h-9 w-9 place-items-center overflow-hidden rounded-full border bg-brand-50 dark:bg-slate-800"
+              className="ml-1 flex items-center gap-2"
             >
-              {user.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.avatar} alt={user.fullName} className="h-full w-full object-cover" />
-              ) : (
-                <UserIcon className="h-5 w-5" />
-              )}
+              <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-full border bg-brand-50 dark:bg-slate-800">
+                {user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatar} alt={user.fullName} className="h-full w-full object-cover" />
+                ) : (
+                  <UserIcon className="h-5 w-5" />
+                )}
+              </span>
+              <span className="hidden text-left leading-tight lg:block">
+                <span className="block text-sm font-semibold">{user.fullName}</span>
+                <span className="block text-xs capitalize text-muted">{user.role}</span>
+              </span>
             </button>
             {menuOpen && (
               <>
@@ -158,6 +161,7 @@ export default function Header() {
             Login
           </Link>
         )}
+        </div>
       </div>
     </header>
   );

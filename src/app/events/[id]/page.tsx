@@ -10,8 +10,14 @@ import {
   Check,
   Share2,
   ArrowLeft,
+  Bookmark,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Mail,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
+import { WhatsAppIcon } from "@/components/BusinessCard";
 import { getJSON, postJSON } from "@/lib/client";
 import { useStore } from "@/store/useStore";
 import type { EventItem } from "@/lib/types";
@@ -23,6 +29,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventItem | null>(null);
   const [rsvped, setRsvped] = useState(false);
   const [rsvpCount, setRsvpCount] = useState(0);
+  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -108,6 +115,18 @@ export default function EventDetailPage() {
         )}
       </div>
 
+      {event.organizer && (
+        <div className="card-soft mt-4 flex items-center gap-3 p-3">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-600 text-white">
+            <User className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-xs text-muted">Organized by</p>
+            <p className="font-semibold">{event.organizer}</p>
+          </div>
+        </div>
+      )}
+
       <div className="mt-4 flex gap-2">
         <button
           onClick={toggleRsvp}
@@ -118,11 +137,17 @@ export default function EventDetailPage() {
               <Check className="h-4 w-4" /> Going ({rsvpCount})
             </>
           ) : (
-            <>RSVP ({rsvpCount})</>
+            <>★ RSVP ({rsvpCount})</>
           )}
         </button>
+        <button
+          onClick={() => setSaved((s) => !s)}
+          className={`btn-ghost border ${saved ? "text-brand-600" : ""}`}
+        >
+          <Bookmark className={`h-4 w-4 ${saved ? "fill-current" : ""}`} /> Save
+        </button>
         <button onClick={share} className="btn-ghost border">
-          <Share2 className="h-4 w-4" /> Share
+          <Share2 className="h-4 w-4" />
         </button>
       </div>
 
@@ -134,6 +159,11 @@ export default function EventDetailPage() {
           </p>
         </div>
       )}
+
+      <div className="mt-5">
+        <h2 className="mb-2 font-bold">Share Event</h2>
+        <ShareRow title={event.title} />
+      </div>
 
       {event.location && (
         <div className="mt-5">
@@ -157,6 +187,34 @@ function InfoRow({ icon, children }: { icon: React.ReactNode; children: React.Re
     <div className="flex items-center gap-2 text-muted">
       <span className="text-brand-600">{icon}</span>
       <span className="text-[rgb(var(--foreground))]">{children}</span>
+    </div>
+  );
+}
+
+function ShareRow({ title }: { title: string }) {
+  const url = typeof window !== "undefined" ? window.location.href : "";
+  const enc = encodeURIComponent(url);
+  const text = encodeURIComponent(title);
+  const links = [
+    { icon: <Facebook className="h-5 w-5" />, color: "bg-[#1877f2]", href: `https://www.facebook.com/sharer/sharer.php?u=${enc}` },
+    { icon: <Twitter className="h-5 w-5" />, color: "bg-slate-900", href: `https://twitter.com/intent/tweet?url=${enc}&text=${text}` },
+    { icon: <Linkedin className="h-5 w-5" />, color: "bg-[#0a66c2]", href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc}` },
+    { icon: <WhatsAppIcon className="h-5 w-5" />, color: "bg-emerald-500", href: `https://wa.me/?text=${text}%20${enc}` },
+    { icon: <Mail className="h-5 w-5" />, color: "bg-brand-600", href: `mailto:?subject=${text}&body=${enc}` },
+  ];
+  return (
+    <div className="flex gap-3">
+      {links.map((l, i) => (
+        <a
+          key={i}
+          href={l.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`grid h-11 w-11 place-items-center rounded-full text-white transition active:scale-95 ${l.color}`}
+        >
+          {l.icon}
+        </a>
+      ))}
     </div>
   );
 }

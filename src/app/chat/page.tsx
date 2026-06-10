@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Send, Hash, Users, Circle, MessageSquare } from "lucide-react";
+import { Send, Hash, Users, MessageSquare, Smile, ArrowLeft } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
 import { getJSON } from "@/lib/client";
 import { useStore } from "@/store/useStore";
@@ -17,6 +17,7 @@ export default function ChatPage() {
   const [activeRoom, setActiveRoom] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [input, setInput] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,13 +114,25 @@ export default function ChatPage() {
   if (loading) return <Spinner className="py-20" />;
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] flex-col">
-      <div className="mb-2 flex items-center justify-between">
-        <h1 className="text-xl font-extrabold">Community Chat</h1>
-        <span className="flex items-center gap-1.5 text-xs text-muted">
-          <Circle className={`h-2.5 w-2.5 ${connected ? "fill-green-500 text-green-500" : "fill-slate-400 text-slate-400"}`} />
-          <Users className="h-4 w-4" /> {onlineCount} online
-        </span>
+    <div className="flex h-[calc(100vh-9rem)] flex-col">
+      <div className="mb-2 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-800 p-3 text-white shadow">
+        <Link href="/support" className="grid h-9 w-9 place-items-center rounded-full bg-white/15">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div className="relative">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20 font-bold">
+            <MessageSquare className="h-5 w-5" />
+          </span>
+          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-700 bg-green-400" />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold leading-tight">SandisTech Support</p>
+          <p className="flex items-center gap-1 text-xs text-white/80">
+            {connected ? "Online now" : "Connecting…"}
+            <span className="mx-1">·</span>
+            <Users className="h-3 w-3" /> {onlineCount}
+          </p>
+        </div>
       </div>
 
       <div className="no-scrollbar -mx-3 mb-2 flex gap-2 overflow-x-auto px-3">
@@ -169,24 +182,65 @@ export default function ChatPage() {
           );
         })}
         {typingUsers.length > 0 && (
-          <p className="text-xs italic text-muted">
-            {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing…
-          </p>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-2xl muted px-3 py-2">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" />
+            </span>
+            <span className="text-xs italic text-muted">
+              {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing
+            </span>
+          </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={send} className="mt-2 flex gap-2">
-        <input
-          className="input"
-          placeholder="Type a message…"
-          value={input}
-          onChange={(e) => onType(e.target.value)}
-        />
-        <button className="btn-primary !px-4" disabled={!connected}>
-          <Send className="h-4 w-4" />
+      {showEmoji && (
+        <div className="mt-2 flex flex-wrap gap-1 rounded-xl border p-2">
+          {EMOJIS.map((em) => (
+            <button
+              key={em}
+              type="button"
+              onClick={() => {
+                setInput((v) => v + em);
+                setShowEmoji(false);
+              }}
+              className="rounded-lg p-1 text-xl transition hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              {em}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={send} className="mt-2 flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-1 rounded-full border px-2">
+          <button
+            type="button"
+            onClick={() => setShowEmoji((v) => !v)}
+            className="grid h-9 w-9 place-items-center rounded-full text-muted transition hover:text-brand-600"
+            aria-label="Emoji"
+          >
+            <Smile className="h-5 w-5" />
+          </button>
+          <input
+            className="h-11 flex-1 bg-transparent text-sm outline-none"
+            placeholder="Type a message…"
+            value={input}
+            onChange={(e) => onType(e.target.value)}
+          />
+        </div>
+        <button
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand-600 text-white transition hover:bg-brand-700 disabled:opacity-50"
+          disabled={!connected || !input.trim()}
+          aria-label="Send"
+        >
+          <Send className="h-5 w-5" />
         </button>
       </form>
     </div>
   );
 }
+
+const EMOJIS = ["😀", "😂", "😍", "👍", "🙏", "🎉", "🔥", "❤️", "😎", "🤝", "👏", "😢", "😮", "💯", "✅", "🚀"];

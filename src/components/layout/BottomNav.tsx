@@ -26,11 +26,18 @@ export default function BottomNav() {
               key={t.href}
               href={t.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition",
+                "flex flex-col items-center gap-1 py-2 text-[11px] font-semibold transition",
                 active ? "text-brand-600" : "text-muted"
               )}
             >
-              <Icon className={cn("h-5 w-5", active && "scale-110")} />
+              <span
+                className={cn(
+                  "grid h-8 w-12 place-items-center rounded-full transition",
+                  active && "bg-brand-100 dark:bg-brand-900/40"
+                )}
+              >
+                <Icon className={cn("h-5 w-5", active && "scale-110")} />
+              </span>
               {t.label}
             </Link>
           );

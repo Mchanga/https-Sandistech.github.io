@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { getJSON } from "@/lib/client";
+import RealtimeBridge from "@/components/RealtimeBridge";
 import type { SafeUser } from "@/lib/types";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -44,5 +45,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     };
   }, [user, setUnread]);
 
-  return <>{children}</>;
+  return (
+    <>
+      <RealtimeBridge />
+      {children}
+    </>
+  );
 }
