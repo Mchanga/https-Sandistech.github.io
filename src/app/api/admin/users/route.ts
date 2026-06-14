@@ -3,14 +3,55 @@ import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { requireAdmin, toSafeUser } from "@/lib/auth";
-import { handleError, ok } from "@/lib/api-helpers";
+import { requireAdmin, toSafeUser, hashPassword } from "@/lib/auth";
+import { created, handleError, ok } from "@/lib/api-helpers";
 
 export async function GET() {
   try {
     await requireAdmin();
     const rows = await db.select().from(users).orderBy(desc(users.createdAt));
     return ok({ users: rows.map(toSafeUser) });
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+const createSchema = z.object({
+  fullName: z.string().min(2).max(255),
+  email: z.string().email(),
+  password: z.string().min(6).max(100),
+  role: z.enum(["user", "admin"]).default("admin"),
+});
+
+/** Admins create other accounts (used for adding fellow administrators). */
+export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin();
+    const { fullName, email, password, role } = createSchema.parse(
+      await req.json()
+    );
+    const lowered = email.toLowerCase();
+    const existing = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, lowered));
+    if (existing.length)
+      return Response.json(
+        { error: "An account with this email already exists" },
+        { status: 409 }
+      );
+    const passwordHash = await hashPassword(password);
+    const [user] = await db
+      .insert(users)
+      .values({
+        fullName,
+        email: lowered,
+        passwordHash,
+        role,
+        avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(lowered)}`,
+      })
+      .returning();
+    return created({ user: toSafeUser(user) });
   } catch (err) {
     return handleError(err);
   }

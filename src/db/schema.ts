@@ -54,6 +54,9 @@ export const posts = pgTable(
     views: integer("views").notNull().default(0),
     likes: integer("likes").notNull().default(0),
     commentsCount: integer("comments_count").notNull().default(0),
+    rating: real("rating").notNull().default(0),
+    ratingCount: integer("rating_count").notNull().default(0),
+    allowComments: boolean("allow_comments").notNull().default(true),
     featured: boolean("featured").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -205,6 +208,31 @@ export const chatMessages = pgTable(
   (t) => [index("chat_messages_room_idx").on(t.roomId)]
 );
 
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    postId: integer("post_id").references(() => posts.id, { onDelete: "cascade" }),
+    businessId: integer("business_id").references(() => businesses.id, {
+      onDelete: "cascade",
+    }),
+    rating: integer("rating").notNull(),
+    comment: text("comment"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("reviews_user_post_uniq").on(t.userId, t.postId),
+    uniqueIndex("reviews_user_business_uniq").on(t.userId, t.businessId),
+    index("reviews_post_idx").on(t.postId),
+    index("reviews_business_idx").on(t.businessId),
+  ]
+);
+
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
@@ -225,3 +253,4 @@ export type Comment = typeof comments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type ChatRoom = typeof chatRooms.$inferSelect;
+export type Review = typeof reviews.$inferSelect;

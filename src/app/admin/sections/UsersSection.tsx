@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Shield } from "lucide-react";
+import { Trash2, Shield, UserPlus } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
-import { getJSON, patchJSON, del } from "@/lib/client";
+import { getJSON, postJSON, patchJSON, del } from "@/lib/client";
 import { useStore } from "@/store/useStore";
 import type { SafeUser } from "@/lib/types";
 
@@ -28,10 +28,16 @@ export default function AdminUsers() {
     setUsers((prev) => prev?.filter((u) => u.id !== id) ?? null);
   }
 
+  function onCreated(u: SafeUser) {
+    setUsers((prev) => [u, ...(prev ?? [])]);
+  }
+
   if (users === null) return <Spinner className="py-16" />;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      <AddAdminForm onCreated={onCreated} />
+      <div className="space-y-2">
       {users.map((u) => (
         <div key={u.id} className="card flex items-center gap-3 p-3">
           <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full muted">
@@ -70,6 +76,63 @@ export default function AdminUsers() {
           <Shield className="mx-auto mb-2 h-6 w-6" /> No users found.
         </p>
       )}
+      </div>
     </div>
+  );
+}
+
+function AddAdminForm({ onCreated }: { onCreated: (u: SafeUser) => void }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ fullName: "", email: "", password: "", role: "admin" });
+  const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
+  const [error, setError] = useState("");
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setF({ ...f, [k]: e.target.value });
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("saving");
+    setError("");
+    try {
+      const { user } = await postJSON<{ user: SafeUser }>("/api/admin/users", f);
+      onCreated(user);
+      setF({ fullName: "", email: "", password: "", role: "admin" });
+      setOpen(false);
+      setStatus("idle");
+    } catch (err) {
+      setStatus("error");
+      setError(err instanceof Error ? err.message : "Failed to create");
+    }
+  }
+
+  if (!open)
+    return (
+      <button onClick={() => setOpen(true)} className="btn-primary w-full">
+        <UserPlus className="h-4 w-4" /> Add Admin / User
+      </button>
+    );
+
+  return (
+    <form onSubmit={submit} className="card space-y-3 p-4">
+      <p className="flex items-center gap-2 font-bold">
+        <UserPlus className="h-4 w-4 text-brand-600" /> Create account
+      </p>
+      <input className="input" placeholder="Full name" required value={f.fullName} onChange={set("fullName")} />
+      <input className="input" type="email" placeholder="Email" required value={f.email} onChange={set("email")} />
+      <input className="input" type="password" placeholder="Password (min 6 chars)" required minLength={6} value={f.password} onChange={set("password")} />
+      <select className="input" value={f.role} onChange={set("role")}>
+        <option value="admin">Administrator</option>
+        <option value="user">Registered user</option>
+      </select>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      <div className="flex gap-2">
+        <button type="submit" disabled={status === "saving"} className="btn-primary flex-1">
+          {status === "saving" ? "Creating…" : "Create"}
+        </button>
+        <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

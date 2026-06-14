@@ -51,10 +51,10 @@ export default function SupportPage() {
             <MessageSquare className="h-6 w-6" />
           </span>
           <div className="flex-1">
-            <p className="text-lg font-extrabold">Live Chat</p>
+            <p className="text-lg font-extrabold">Community Chat</p>
             <p className="flex items-center gap-1.5 text-sm text-white/80">
               <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
-              Support team is online
+              Chat live with other members
             </p>
           </div>
         </div>

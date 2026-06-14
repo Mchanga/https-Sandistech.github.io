@@ -5,6 +5,8 @@ import { db } from "@/db";
 import { businesses } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { created, handleError, ok } from "@/lib/api-helpers";
+import { broadcast } from "@/lib/realtime";
+import { notifyAll } from "@/lib/notify";
 
 export async function GET(req: NextRequest) {
   try {
@@ -52,7 +54,7 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const data = schema.parse(await req.json());
     const [row] = await db
       .insert(businesses)
@@ -61,9 +63,17 @@ export async function POST(req: NextRequest) {
         email: data.email || null,
         imageUrl: data.imageUrl || null,
         logo: data.logo || null,
-        rating: data.rating ?? 0,
+        rating: 0,
+        reviews: 0,
       })
       .returning();
+    broadcast("new_business", row);
+    await notifyAll({
+      title: "New business listed",
+      content: row.name,
+      link: `/business/${row.id}`,
+      excludeUserId: admin.id,
+    });
     return created({ business: row });
   } catch (err) {
     return handleError(err);

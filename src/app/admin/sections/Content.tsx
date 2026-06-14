@@ -5,26 +5,28 @@ import {
   Newspaper,
   Briefcase,
   Calendar,
-  UploadCloud,
   X,
   Tag,
   Eye,
   Star,
   Send,
   Save,
+  ListChecks,
 } from "lucide-react";
 import { postJSON } from "@/lib/client";
 import RichEditor from "@/components/RichEditor";
+import ImageUploader from "@/components/ImageUploader";
+import ManageContent from "@/components/admin/ManageContent";
 import { slugify } from "@/lib/utils";
 
-type Sub = "post" | "business" | "event";
+type Sub = "post" | "business" | "event" | "manage";
 
 export default function AdminContent() {
   const [sub, setSub] = useState<Sub>("post");
 
   return (
     <div>
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 grid grid-cols-4 gap-2">
         <SubTab active={sub === "post"} onClick={() => setSub("post")} icon={<Newspaper className="h-4 w-4" />}>
           Post
         </SubTab>
@@ -34,11 +36,15 @@ export default function AdminContent() {
         <SubTab active={sub === "event"} onClick={() => setSub("event")} icon={<Calendar className="h-4 w-4" />}>
           Event
         </SubTab>
+        <SubTab active={sub === "manage"} onClick={() => setSub("manage")} icon={<ListChecks className="h-4 w-4" />}>
+          Manage
+        </SubTab>
       </div>
 
       {sub === "post" && <PostForm />}
       {sub === "business" && <BusinessForm />}
       {sub === "event" && <EventForm />}
+      {sub === "manage" && <ManageContent />}
     </div>
   );
 }
@@ -152,6 +158,7 @@ function PostForm() {
         metaDescription,
         status: override ?? postStatus,
         featured,
+        allowComments,
       },
       reset
     );
@@ -211,20 +218,11 @@ function PostForm() {
 
         <div className="card-soft space-y-3 p-4">
           <p className="text-sm font-bold">Featured Image</p>
-          <label className="flex cursor-text flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-center text-muted transition hover:border-brand-500">
-            {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt="preview" className="max-h-40 rounded-lg object-cover" />
-            ) : (
-              <>
-                <UploadCloud className="h-8 w-8" />
-                <span className="text-sm font-medium">Paste an image URL below</span>
-                <span className="text-xs">PNG, JPG, GIF or WEBP</span>
-              </>
-            )}
-          </label>
-          <input className="input" placeholder="Image URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-          <input className="input" placeholder="Video URL — MP4 or YouTube (optional)" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
+          <ImageUploader value={imageUrl} onChange={setImageUrl} />
+          <div>
+            <label className="mb-1 block text-sm font-bold">Video URL (optional)</label>
+            <input className="input" placeholder="MP4 or YouTube — square 1080×1080 recommended" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
+          </div>
         </div>
 
         <div className="card-soft space-y-2 p-4">
@@ -395,7 +393,6 @@ function BusinessForm() {
     website: "",
     imageUrl: "",
     logo: "",
-    rating: "",
   });
   const { status, error, submit } = useSubmit("/api/businesses");
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -419,11 +416,17 @@ function BusinessForm() {
       </div>
       <input className="input" placeholder="Email" value={f.email} onChange={set("email")} />
       <input className="input" placeholder="Website" value={f.website} onChange={set("website")} />
-      <input className="input" placeholder="Image / Banner URL" value={f.imageUrl} onChange={set("imageUrl")} />
-      <div className="grid grid-cols-2 gap-3">
-        <input className="input" placeholder="Logo URL" value={f.logo} onChange={set("logo")} />
-        <input className="input" type="number" min="0" max="5" step="0.1" placeholder="Rating (0-5)" value={f.rating} onChange={set("rating")} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="mb-1 text-sm font-bold">Banner</p>
+          <ImageUploader value={f.imageUrl} onChange={(v) => setF((s) => ({ ...s, imageUrl: v }))} label="Banner" />
+        </div>
+        <div>
+          <p className="mb-1 text-sm font-bold">Logo</p>
+          <ImageUploader value={f.logo} onChange={(v) => setF((s) => ({ ...s, logo: v }))} label="Logo" />
+        </div>
       </div>
+      <p className="text-xs text-muted">New businesses start at 0 rating / 0 reviews — users add ratings.</p>
       <FormFooter status={status} error={error} label="Add business" />
     </form>
   );
@@ -469,6 +472,10 @@ function EventForm() {
       <textarea className="input min-h-[80px]" placeholder="Description" value={f.description} onChange={set("description")} />
       <input className="input" placeholder="Location" value={f.location} onChange={set("location")} />
       <input className="input" placeholder="Organizer" value={f.organizer} onChange={set("organizer")} />
+      <div>
+        <p className="mb-1 text-sm font-bold">Event Image</p>
+        <ImageUploader value={f.imageUrl} onChange={(v) => setF((s) => ({ ...s, imageUrl: v }))} label="Event image" />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="mb-1 block text-xs font-semibold text-muted">Start</label>
@@ -479,7 +486,6 @@ function EventForm() {
           <input className="input" type="datetime-local" value={f.endDate} onChange={set("endDate")} />
         </div>
       </div>
-      <input className="input" placeholder="Image URL" value={f.imageUrl} onChange={set("imageUrl")} />
       <FormFooter status={status} error={error} label="Create event" />
     </form>
   );

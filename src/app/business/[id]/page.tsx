@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
 import { WhatsAppIcon } from "@/components/BusinessCard";
+import RatingReviews from "@/components/RatingReviews";
 import { getJSON } from "@/lib/client";
 import type { Business } from "@/lib/types";
 
@@ -76,15 +77,15 @@ export default function BusinessDetailPage() {
             <MapPin className="h-4 w-4" /> {b.location}
           </span>
         )}
-        {b.rating > 0 && (
-          <span className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="font-semibold text-[rgb(var(--foreground))]">
-              {b.rating.toFixed(1)}
-            </span>
-            ({b.reviews} reviews)
+        <span className="flex items-center gap-1">
+          <Star
+            className={`h-4 w-4 ${b.reviews > 0 ? "fill-amber-400 text-amber-400" : "text-slate-300"}`}
+          />
+          <span className="font-semibold text-[rgb(var(--foreground))]">
+            {b.reviews > 0 ? b.rating.toFixed(1) : "0.0"}
           </span>
-        )}
+          ({b.reviews} review{b.reviews === 1 ? "" : "s"})
+        </span>
       </div>
 
       {/* Action buttons */}
@@ -154,6 +155,8 @@ export default function BusinessDetailPage() {
           />
         </section>
       )}
+
+      <RatingReviews endpoint={`/api/businesses/${id}/reviews`} />
     </div>
   );
 }

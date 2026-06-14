@@ -126,11 +126,11 @@ export default function ChatPage() {
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-700 bg-green-400" />
         </div>
         <div className="flex-1">
-          <p className="font-bold leading-tight">SandisTech Support</p>
+          <p className="font-bold leading-tight">Community Chat</p>
           <p className="flex items-center gap-1 text-xs text-white/80">
-            {connected ? "Online now" : "Connecting…"}
+            {connected ? "Live" : "Connecting…"}
             <span className="mx-1">·</span>
-            <Users className="h-3 w-3" /> {onlineCount}
+            <Users className="h-3 w-3" /> {onlineCount} online
           </p>
         </div>
       </div>
@@ -166,16 +166,16 @@ export default function ChatPage() {
                 )}
               </div>
               <div className={`max-w-[75%] ${mine ? "text-right" : ""}`}>
-                <div className="flex items-center gap-1 text-[11px] text-muted">
-                  <span className="font-semibold">{mine ? "You" : m.userName}</span>
-                  <span>· {timeAgo(m.createdAt)}</span>
-                </div>
                 <div
-                  className={`mt-0.5 inline-block rounded-2xl px-3 py-2 text-sm ${
+                  className={`inline-block rounded-2xl px-3 py-2 text-sm ${
                     mine ? "bg-brand-600 text-white" : "muted"
                   }`}
                 >
                   {m.message}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted">
+                  <span className="italic">{mine ? "You" : m.userName}</span>
+                  <span>· {timeAgo(m.createdAt)}</span>
                 </div>
               </div>
             </div>

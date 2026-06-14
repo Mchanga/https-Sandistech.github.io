@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
 import VideoEmbed from "@/components/VideoEmbed";
+import RatingReviews from "@/components/RatingReviews";
 import { getJSON, postJSON } from "@/lib/client";
 import { useStore } from "@/store/useStore";
 import { formatNumber, timeAgo } from "@/lib/utils";
@@ -171,6 +172,9 @@ export default function PostPage() {
           </button>
         </div>
       </div>
+
+      {/* ratings & reviews */}
+      <RatingReviews endpoint={`/api/posts/${slug}/reviews`} />
 
       {/* comments */}
       <section className="mt-8">

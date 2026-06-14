@@ -23,6 +23,8 @@ export interface PostListItem {
   views: number;
   likes: number;
   commentsCount: number;
+  rating?: number;
+  ratingCount?: number;
   featured?: boolean;
   createdAt: string;
   authorName: string | null;
@@ -32,6 +34,17 @@ export interface PostListItem {
 export interface PostDetail extends PostListItem {
   content: string;
   authorId: number;
+  allowComments?: boolean;
+}
+
+export interface ReviewItem {
+  id: number;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  userId: number;
+  userName: string | null;
+  userAvatar: string | null;
 }
 
 export interface CommentItem {
@@ -69,6 +82,7 @@ export interface EventItem {
   endDate: string | null;
   category: string;
   imageUrl: string | null;
+  rsvpCount?: number;
 }
 
 export interface NotificationItem {

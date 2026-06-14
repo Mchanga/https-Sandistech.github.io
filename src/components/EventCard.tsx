@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MapPin, Clock, Calendar, Check, Bookmark, Share2 } from "lucide-react";
+import { MapPin, Clock, Calendar, Check, Bookmark, Share2, Users } from "lucide-react";
 import { postJSON } from "@/lib/client";
 import { useStore } from "@/store/useStore";
 import type { EventItem } from "@/lib/types";
@@ -12,14 +12,18 @@ export default function EventCard({ event: e }: { event: EventItem }) {
   const router = useRouter();
   const { user } = useStore();
   const [rsvped, setRsvped] = useState(false);
+  const [rsvpCount, setRsvpCount] = useState(e.rsvpCount ?? 0);
   const [saved, setSaved] = useState(false);
   const date = new Date(e.startDate);
 
   async function rsvp(ev: React.MouseEvent) {
     ev.preventDefault();
     if (!user) return router.push("/login");
-    const r = await postJSON<{ rsvped: boolean }>(`/api/events/${e.id}/rsvp`, {}).catch(() => null);
-    if (r) setRsvped(r.rsvped);
+    const r = await postJSON<{ rsvped: boolean; rsvpCount: number }>(`/api/events/${e.id}/rsvp`, {}).catch(() => null);
+    if (r) {
+      setRsvped(r.rsvped);
+      setRsvpCount(r.rsvpCount);
+    }
   }
 
   function share(ev: React.MouseEvent) {
@@ -67,6 +71,9 @@ export default function EventCard({ event: e }: { event: EventItem }) {
             <MapPin className="h-4 w-4 text-purple-600" /> {e.location}
           </p>
         )}
+        <p className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-purple-600" /> {rsvpCount} going
+        </p>
       </div>
 
       <div className="grid grid-cols-3 gap-2 px-3 pb-3">
@@ -77,7 +84,7 @@ export default function EventCard({ event: e }: { event: EventItem }) {
           }`}
         >
           {rsvped ? <Check className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
-          {rsvped ? "Going" : "RSVP"}
+          {rsvped ? `Going (${rsvpCount})` : `RSVP (${rsvpCount})`}
         </button>
         <button
           onClick={(ev) => {

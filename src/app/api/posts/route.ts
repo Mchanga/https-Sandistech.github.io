@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 import { created, handleError, ok } from "@/lib/api-helpers";
 import { slugify } from "@/lib/utils";
 import { broadcast } from "@/lib/realtime";
+import { notifyAll } from "@/lib/notify";
 
 export async function GET(req: NextRequest) {
   try {
@@ -96,6 +97,7 @@ const createSchema = z.object({
   status: z.enum(["draft", "pending", "published"]).default("published"),
   type: z.enum(["news", "business", "event"]).default("news"),
   featured: z.boolean().optional(),
+  allowComments: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -125,6 +127,7 @@ export async function POST(req: NextRequest) {
         status: data.status,
         type: data.type,
         featured: data.featured ?? false,
+        allowComments: data.allowComments ?? true,
         authorId: admin.id,
       })
       .returning();
@@ -147,6 +150,12 @@ export async function POST(req: NextRequest) {
         authorId: post.authorId,
         authorName: admin.fullName,
         authorAvatar: admin.avatar ?? null,
+      });
+      await notifyAll({
+        title: "New article published",
+        content: post.title,
+        link: `/post/${post.slug}`,
+        excludeUserId: admin.id,
       });
     }
 

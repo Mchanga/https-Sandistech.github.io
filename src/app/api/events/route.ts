@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { and, asc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { events, eventRsvps } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { created, handleError, ok } from "@/lib/api-helpers";
+import { broadcast } from "@/lib/realtime";
+import { notifyAll } from "@/lib/notify";
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,9 +28,22 @@ export async function GET(req: NextRequest) {
     const where = conditions.length ? and(...conditions) : undefined;
 
     const rows = await db
-      .select()
+      .select({
+        id: events.id,
+        title: events.title,
+        description: events.description,
+        location: events.location,
+        organizer: events.organizer,
+        startDate: events.startDate,
+        endDate: events.endDate,
+        category: events.category,
+        imageUrl: events.imageUrl,
+        rsvpCount: sql<number>`count(${eventRsvps.id})::int`,
+      })
       .from(events)
+      .leftJoin(eventRsvps, eq(eventRsvps.eventId, events.id))
       .where(where)
+      .groupBy(events.id)
       .orderBy(asc(events.startDate));
     return ok({ events: rows });
   } catch (err) {
@@ -49,7 +64,7 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const data = schema.parse(await req.json());
     const [row] = await db
       .insert(events)
@@ -64,6 +79,13 @@ export async function POST(req: NextRequest) {
         imageUrl: data.imageUrl || null,
       })
       .returning();
+    broadcast("new_event", row);
+    await notifyAll({
+      title: "New event added",
+      content: row.title,
+      link: `/events/${row.id}`,
+      excludeUserId: admin.id,
+    });
     return created({ event: row });
   } catch (err) {
     return handleError(err);

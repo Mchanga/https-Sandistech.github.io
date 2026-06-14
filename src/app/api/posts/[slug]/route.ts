@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { posts, users, comments, likes, bookmarks } from "@/db/schema";
+import { posts, users, comments, likes, bookmarks, reviews } from "@/db/schema";
 import { getCurrentUser, requireAdmin } from "@/lib/auth";
 import { handleError, ok } from "@/lib/api-helpers";
 
@@ -25,6 +25,9 @@ export async function GET(req: NextRequest, { params }: Params) {
         views: posts.views,
         likes: posts.likes,
         commentsCount: posts.commentsCount,
+        rating: posts.rating,
+        ratingCount: posts.ratingCount,
+        allowComments: posts.allowComments,
         featured: posts.featured,
         createdAt: posts.createdAt,
         authorId: posts.authorId,
@@ -45,7 +48,13 @@ export async function GET(req: NextRequest, { params }: Params) {
     const user = await getCurrentUser();
     let liked = false;
     let bookmarked = false;
+    let myReview: { rating: number; comment: string | null } | null = null;
     if (user) {
+      const [r] = await db
+        .select({ rating: reviews.rating, comment: reviews.comment })
+        .from(reviews)
+        .where(and(eq(reviews.userId, user.id), eq(reviews.postId, post.id)));
+      myReview = r ?? null;
       const [l] = await db
         .select()
         .from(likes)
@@ -60,7 +69,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       bookmarked = !!b;
     }
 
-    return ok({ post: { ...post, views: post.views + 1 }, liked, bookmarked });
+    return ok({ post: { ...post, views: post.views + 1 }, liked, bookmarked, myReview });
   } catch (err) {
     return handleError(err);
   }
