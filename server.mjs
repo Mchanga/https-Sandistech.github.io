@@ -95,6 +95,8 @@ io.on("connection", async (socket) => {
       if (r.startsWith("room:")) socket.leave(r);
     });
     socket.join(`room:${roomId}`);
+    // send current presence so the joining client shows an accurate count
+    socket.emit("presence", { online: Array.from(online.keys()) });
   });
 
   socket.on("typing", ({ roomId, isTyping }) => {

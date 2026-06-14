@@ -46,15 +46,21 @@ export default function ChatPage() {
       .catch(() => setMessages([]));
   }, [activeRoom]);
 
-  // socket listeners
+  // keep a ref of the active room so socket listeners (attached once on
+  // connect) always compare against the current room without re-subscribing.
+  const activeRoomRef = useRef<number | null>(null);
+  useEffect(() => {
+    activeRoomRef.current = activeRoom;
+  }, [activeRoom]);
+
+  // attach socket listeners as soon as we're connected (independent of room)
+  // so the initial presence broadcast is never missed.
   useEffect(() => {
     const s = socket.current;
-    if (!s || !activeRoom) return;
-    s.emit("join_room", activeRoom);
-    setTypingUsers([]);
+    if (!s || !connected) return;
 
     const onMessage = (m: ChatMessageItem) => {
-      if (m.roomId === activeRoom) setMessages((prev) => [...prev, m]);
+      if (m.roomId === activeRoomRef.current) setMessages((prev) => [...prev, m]);
     };
     const onPresence = (p: { online: number[] }) => setOnlineCount(p.online.length);
     const onTyping = (t: { userName: string; isTyping: boolean }) => {
@@ -72,6 +78,14 @@ export default function ChatPage() {
       s.off("presence", onPresence);
       s.off("typing", onTyping);
     };
+  }, [socket, connected]);
+
+  // (re)join the active room whenever it changes or we (re)connect.
+  useEffect(() => {
+    const s = socket.current;
+    if (!s || !connected || !activeRoom) return;
+    s.emit("join_room", activeRoom);
+    setTypingUsers([]);
   }, [socket, activeRoom, connected]);
 
   useEffect(() => {
