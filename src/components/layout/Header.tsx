@@ -46,12 +46,31 @@ export default function Header() {
         <button
           aria-label="Open menu"
           onClick={() => toggleDrawer(true)}
-          className="btn-ghost !px-2"
+          className="btn-ghost !px-2 md:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
 
         <Logo className="mr-1" />
+
+        {/* Desktop top navigation (web look) */}
+        <nav className="hidden items-center gap-1 md:flex">
+          {[
+            { href: "/", label: "Home" },
+            { href: "/news", label: "News" },
+            { href: "/business", label: "Business" },
+            { href: "/events", label: "Events" },
+            { href: "/support", label: "Support" },
+          ].map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-muted transition hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-slate-800"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
 
         {/* Desktop centered search */}
         <button

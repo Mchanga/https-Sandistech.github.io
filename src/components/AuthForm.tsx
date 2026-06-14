@@ -91,6 +91,17 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           </p>
         )}
 
+        {mode === "login" && (
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-semibold text-brand-600"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        )}
+
         <button className="btn-primary w-full" disabled={loading}>
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {mode === "login" ? "Log in" : "Create account"}
