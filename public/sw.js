@@ -1,5 +1,5 @@
 // Minimal service worker for installability + light offline shell caching.
-const CACHE = "sandistech-v1";
+const CACHE = "sandistech-v2";
 const ASSETS = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
