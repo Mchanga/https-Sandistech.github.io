@@ -3,9 +3,9 @@
 import { useRef, useState } from "react";
 import { ImageIcon, X, Loader2 } from "lucide-react";
 
-const TARGET = 1080; // every image/video is enforced to 1080 x 1080
+const MAX_DIMENSION = 1920; // large side is capped so any-size uploads stay crisp but light
 
-/** Center-crop + resize any image to a 1080x1080 JPEG data URL. */
+/** Resize any image so its longest side <= MAX_DIMENSION, preserving aspect ratio. */
 function processImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -14,17 +14,21 @@ function processImage(file: File): Promise<string> {
       const img = new Image();
       img.onerror = () => reject(new Error("Invalid image"));
       img.onload = () => {
+        let { width, height } = img;
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          const scale = MAX_DIMENSION / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
         const canvas = document.createElement("canvas");
-        canvas.width = TARGET;
-        canvas.height = TARGET;
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (!ctx) return reject(new Error("Canvas unsupported"));
-        // cover: scale so the shorter side fills 1080, then center-crop
-        const scale = Math.max(TARGET / img.width, TARGET / img.height);
-        const w = img.width * scale;
-        const h = img.height * scale;
-        ctx.drawImage(img, (TARGET - w) / 2, (TARGET - h) / 2, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
+        ctx.drawImage(img, 0, 0, width, height);
+        // keep PNG transparency for logos/avatars, JPEG otherwise for smaller size
+        const hasAlpha = file.type === "image/png" || file.type === "image/webp";
+        resolve(canvas.toDataURL(hasAlpha ? "image/png" : "image/jpeg", 0.9));
       };
       img.src = reader.result as string;
     };
@@ -36,10 +40,12 @@ export default function ImageUploader({
   value,
   onChange,
   label = "Featured Image",
+  circle = false,
 }: {
   value: string;
   onChange: (dataUrl: string) => void;
   label?: string;
+  circle?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -65,9 +71,21 @@ export default function ImageUploader({
   return (
     <div>
       {value ? (
-        <div className="relative overflow-hidden rounded-xl border">
+        <div
+          className={`relative overflow-hidden border bg-slate-100 dark:bg-slate-800 ${
+            circle ? "mx-auto h-28 w-28 rounded-full" : "rounded-xl"
+          }`}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="preview" className="aspect-square w-full object-cover" />
+          <img
+            src={value}
+            alt="preview"
+            className={
+              circle
+                ? "h-full w-full object-cover"
+                : "max-h-80 w-full object-contain"
+            }
+          />
           <button
             type="button"
             onClick={() => onChange("")}
@@ -76,9 +94,6 @@ export default function ImageUploader({
           >
             <X className="h-4 w-4" />
           </button>
-          <span className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white">
-            1080 × 1080
-          </span>
         </div>
       ) : (
         <button
@@ -89,18 +104,24 @@ export default function ImageUploader({
             e.preventDefault();
             handleFile(e.dataTransfer.files?.[0]);
           }}
-          className="grid w-full place-items-center gap-1 rounded-xl border-2 border-dashed py-10 text-center transition hover:border-brand-500"
+          className={`grid w-full place-items-center gap-1 border-2 border-dashed text-center transition hover:border-brand-500 ${
+            circle ? "mx-auto h-28 w-28 rounded-full" : "rounded-xl py-10"
+          }`}
         >
           {busy ? (
             <Loader2 className="h-7 w-7 animate-spin text-brand-600" />
           ) : (
             <ImageIcon className="h-7 w-7 text-muted" />
           )}
-          <span className="text-sm font-semibold">Click to upload image</span>
-          <span className="text-xs text-muted">or drag and drop</span>
-          <span className="text-xs text-muted">
-            Auto-cropped to 1080 × 1080 · JPG/PNG
-          </span>
+          {!circle && (
+            <>
+              <span className="text-sm font-semibold">Click to upload image</span>
+              <span className="text-xs text-muted">or drag and drop</span>
+              <span className="text-xs text-muted">
+                Any size · JPG / PNG / WebP
+              </span>
+            </>
+          )}
         </button>
       )}
       <input
@@ -111,7 +132,11 @@ export default function ImageUploader({
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-      <p className="mt-1 text-[11px] text-muted">{label} must be square (1080×1080).</p>
+      {!circle && (
+        <p className="mt-1 text-[11px] text-muted">
+          {label} · any size accepted, shown clearly.
+        </p>
+      )}
     </div>
   );
 }

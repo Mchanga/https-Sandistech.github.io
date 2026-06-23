@@ -29,6 +29,9 @@ export async function GET(req: NextRequest, { params }: Params) {
         ratingCount: posts.ratingCount,
         allowComments: posts.allowComments,
         featured: posts.featured,
+        status: posts.status,
+        subCategory: posts.subCategory,
+        tags: posts.tags,
         createdAt: posts.createdAt,
         authorId: posts.authorId,
         authorName: users.fullName,
@@ -82,8 +85,12 @@ const updateSchema = z.object({
   imageUrl: z.string().url().optional().or(z.literal("")),
   videoUrl: z.string().url().optional().or(z.literal("")),
   category: z.string().min(1).optional(),
+  subCategory: z.string().optional(),
+  tags: z.string().optional(),
   type: z.enum(["news", "business", "event"]).optional(),
+  status: z.enum(["draft", "pending", "published"]).optional(),
   featured: z.boolean().optional(),
+  allowComments: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -91,13 +98,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     await requireAdmin();
     const { slug } = await params;
     const data = updateSchema.parse(await req.json());
+    // imageUrl/videoUrl: when the key is sent, an empty string clears the media.
+    const set: Record<string, unknown> = { ...data };
+    if (data.imageUrl !== undefined) set.imageUrl = data.imageUrl || null;
+    if (data.videoUrl !== undefined) set.videoUrl = data.videoUrl || null;
+
     const [post] = await db
       .update(posts)
-      .set({
-        ...data,
-        imageUrl: data.imageUrl || undefined,
-        videoUrl: data.videoUrl || undefined,
-      })
+      .set(set)
       .where(eq(posts.slug, slug))
       .returning();
     if (!post) return Response.json({ error: "Post not found" }, { status: 404 });

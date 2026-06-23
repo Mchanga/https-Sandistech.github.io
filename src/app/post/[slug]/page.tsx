@@ -134,7 +134,7 @@ export default function PostPage() {
           <img
             src={post.imageUrl}
             alt={post.title}
-            className="my-4 aspect-[16/9] w-full rounded-2xl object-cover"
+            className="my-4 max-h-[75vh] w-full rounded-2xl bg-slate-100 object-contain dark:bg-slate-800"
           />
         )
       )}

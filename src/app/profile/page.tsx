@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User as UserIcon, Award, Bookmark, MessageSquare, Save } from "lucide-react";
+import { Award, Bookmark, MessageSquare, Save } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
+import ImageUploader from "@/components/ImageUploader";
 import { useStore } from "@/store/useStore";
 import { patchJSON } from "@/lib/client";
 import type { SafeUser } from "@/lib/types";
@@ -60,7 +61,7 @@ export default function ProfilePage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatar} alt={user.fullName} className="h-full w-full object-cover" />
           ) : (
-            <UserIcon className="h-9 w-9" />
+            <span className="text-2xl font-black text-brand-600">{user.fullName[0]}</span>
           )}
         </div>
         <h1 className="mt-3 text-xl font-extrabold">{user.fullName}</h1>
@@ -95,8 +96,8 @@ export default function ProfilePage() {
           <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold text-muted">Avatar URL</label>
-          <input className="input" value={avatar} onChange={(e) => setAvatar(e.target.value)} placeholder="https://…" />
+          <label className="mb-2 block text-xs font-semibold text-muted">Profile picture</label>
+          <ImageUploader value={avatar} onChange={setAvatar} label="Profile picture" circle />
         </div>
         <div>
           <label className="mb-1 block text-xs font-semibold text-muted">Bio</label>

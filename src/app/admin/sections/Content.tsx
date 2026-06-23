@@ -16,6 +16,7 @@ import {
 import { postJSON } from "@/lib/client";
 import RichEditor from "@/components/RichEditor";
 import ImageUploader from "@/components/ImageUploader";
+import VideoUploader from "@/components/VideoUploader";
 import ManageContent from "@/components/admin/ManageContent";
 import { slugify } from "@/lib/utils";
 
@@ -219,10 +220,11 @@ function PostForm() {
         <div className="card-soft space-y-3 p-4">
           <p className="text-sm font-bold">Featured Image</p>
           <ImageUploader value={imageUrl} onChange={setImageUrl} />
-          <div>
-            <label className="mb-1 block text-sm font-bold">Video URL (optional)</label>
-            <input className="input" placeholder="MP4 or YouTube — square 1080×1080 recommended" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
-          </div>
+        </div>
+
+        <div className="card-soft space-y-3 p-4">
+          <p className="text-sm font-bold">Video (optional)</p>
+          <VideoUploader value={videoUrl} onChange={setVideoUrl} />
         </div>
 
         <div className="card-soft space-y-2 p-4">

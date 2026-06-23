@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Newspaper, Briefcase, Calendar, Trash2, Pencil, X } from "lucide-react";
+import { Newspaper, Briefcase, Calendar, Trash2, Pencil, X, Star } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
 import { getJSON, patchJSON, del } from "@/lib/client";
-import type { PostListItem, Business, EventItem } from "@/lib/types";
+import ImageUploader from "@/components/ImageUploader";
+import VideoUploader from "@/components/VideoUploader";
+import RichEditor from "@/components/RichEditor";
+import type { PostListItem, PostDetail, Business, EventItem } from "@/lib/types";
+
+const POST_CATEGORIES = ["Sports", "Education", "Music", "Film", "Entertainment", "Comedy", "TV Shows", "Politics", "Technology"];
 
 type Kind = "post" | "business" | "event";
 
@@ -62,7 +67,6 @@ function Empty({ label }: { label: string }) {
 function PostList() {
   const [items, setItems] = useState<PostListItem[] | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ title: "", status: "published" });
 
   function load() {
     getJSON<{ posts: PostListItem[] }>("/api/posts?status=all&limit=50")
@@ -76,57 +80,43 @@ function PostList() {
     await del(`/api/posts/${slug}`).catch(() => {});
     setItems((p) => p?.filter((x) => x.slug !== slug) ?? null);
   }
-  async function save(slug: string) {
-    await patchJSON(`/api/posts/${slug}`, draft).catch(() => {});
-    setEditing(null);
-    load();
-  }
 
   if (items === null) return <Spinner className="py-12" />;
   if (items.length === 0) return <Empty label="posts" />;
 
   return (
     <div className="space-y-2">
-      {items.map((p) => (
-        <div key={p.id} className="card p-3">
-          {editing === p.slug ? (
-            <div className="space-y-2">
-              <input
-                className="input"
-                value={draft.title}
-                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              />
-              <select
-                className="input"
-                value={draft.status}
-                onChange={(e) => setDraft({ ...draft, status: e.target.value })}
-              >
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
-              </select>
-              <div className="flex gap-2">
-                <button onClick={() => save(p.slug)} className="btn-primary flex-1">
-                  Save
-                </button>
-                <button onClick={() => setEditing(null)} className="btn-ghost">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ) : (
+      {items.map((p) =>
+        editing === p.slug ? (
+          <PostEditor
+            key={p.id}
+            slug={p.slug}
+            onClose={() => setEditing(null)}
+            onSaved={() => {
+              setEditing(null);
+              load();
+            }}
+          />
+        ) : (
+          <div key={p.id} className="card p-3">
             <div className="flex items-center gap-3">
+              {p.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+              ) : (
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg muted">
+                  <Newspaper className="h-5 w-5" />
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{p.title}</p>
                 <p className="text-xs text-muted">
                   {p.category} · {p.type}
+                  {p.status && p.status !== "published" ? ` · ${p.status}` : ""}
                 </p>
               </div>
               <button
-                onClick={() => {
-                  setEditing(p.slug);
-                  setDraft({ title: p.title, status: "published" });
-                }}
+                onClick={() => setEditing(p.slug)}
                 className="btn-ghost !px-2"
                 aria-label="Edit"
               >
@@ -140,9 +130,160 @@ function PostList() {
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
-          )}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+function PostEditor({
+  slug,
+  onClose,
+  onSaved,
+}: {
+  slug: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [draft, setDraft] = useState<{
+    title: string;
+    category: string;
+    type: string;
+    status: string;
+    excerpt: string;
+    content: string;
+    imageUrl: string;
+    videoUrl: string;
+    featured: boolean;
+  } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getJSON<{ post: PostDetail }>(`/api/posts/${slug}`)
+      .then((d) =>
+        setDraft({
+          title: d.post.title,
+          category: d.post.category,
+          type: d.post.type,
+          status: d.post.status ?? "published",
+          excerpt: d.post.excerpt ?? "",
+          content: d.post.content ?? "",
+          imageUrl: d.post.imageUrl ?? "",
+          videoUrl: d.post.videoUrl ?? "",
+          featured: d.post.featured ?? false,
+        })
+      )
+      .catch(() => setError("Could not load this post."));
+  }, [slug]);
+
+  async function save() {
+    if (!draft) return;
+    setSaving(true);
+    setError("");
+    try {
+      await patchJSON(`/api/posts/${slug}`, draft);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save");
+      setSaving(false);
+    }
+  }
+
+  const upd = <K extends keyof NonNullable<typeof draft>>(
+    k: K,
+    v: NonNullable<typeof draft>[K]
+  ) => setDraft((d) => (d ? { ...d, [k]: v } : d));
+
+  if (error && !draft) return <p className="card p-3 text-sm text-red-600">{error}</p>;
+  if (!draft) return <Spinner className="py-8" />;
+
+  return (
+    <div className="card space-y-3 p-4">
+      <div className="flex items-center justify-between">
+        <p className="font-bold">Edit post</p>
+        <button onClick={onClose} className="btn-ghost !px-2" aria-label="Close">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-muted">Title</label>
+        <input className="input" value={draft.title} onChange={(e) => upd("title", e.target.value)} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-muted">Category</label>
+          <select className="input" value={draft.category} onChange={(e) => upd("category", e.target.value)}>
+            {POST_CATEGORIES.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+            {!POST_CATEGORIES.includes(draft.category) && <option>{draft.category}</option>}
+          </select>
         </div>
-      ))}
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-muted">Type</label>
+          <select className="input" value={draft.type} onChange={(e) => upd("type", e.target.value)}>
+            <option value="news">News</option>
+            <option value="business">Business</option>
+            <option value="event">Event</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-muted">Featured Image</label>
+        <ImageUploader value={draft.imageUrl} onChange={(v) => upd("imageUrl", v)} />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-muted">Video</label>
+        <VideoUploader value={draft.videoUrl} onChange={(v) => upd("videoUrl", v)} />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-muted">Excerpt</label>
+        <textarea
+          className="input min-h-[60px]"
+          value={draft.excerpt}
+          onChange={(e) => upd("excerpt", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-muted">Content</label>
+        <RichEditor value={draft.content} onChange={(v) => upd("content", v)} placeholder="Edit your post content…" />
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <select className="input flex-1" value={draft.status} onChange={(e) => upd("status", e.target.value)}>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="pending">Pending</option>
+        </select>
+        <button
+          type="button"
+          onClick={() => upd("featured", !draft.featured)}
+          className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-semibold ${
+            draft.featured ? "border-brand-600 bg-brand-600 text-white" : ""
+          }`}
+        >
+          <Star className="h-4 w-4" /> Featured
+        </button>
+      </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving} className="btn-primary flex-1">
+          {saving ? "Saving…" : "Save changes"}
+        </button>
+        <button onClick={onClose} className="btn-ghost">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

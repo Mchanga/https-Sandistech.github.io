@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Shield, UserPlus } from "lucide-react";
+import { Trash2, Shield, UserPlus, Eye, EyeOff } from "lucide-react";
 import { Spinner } from "@/components/ui/Common";
 import { getJSON, postJSON, patchJSON, del } from "@/lib/client";
 import { useStore } from "@/store/useStore";
@@ -84,6 +84,7 @@ export default function AdminUsers() {
 function AddAdminForm({ onCreated }: { onCreated: (u: SafeUser) => void }) {
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ fullName: "", email: "", password: "", role: "admin" });
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [error, setError] = useState("");
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -119,7 +120,26 @@ function AddAdminForm({ onCreated }: { onCreated: (u: SafeUser) => void }) {
       </p>
       <input className="input" placeholder="Full name" required value={f.fullName} onChange={set("fullName")} />
       <input className="input" type="email" placeholder="Email" required value={f.email} onChange={set("email")} />
-      <input className="input" type="password" placeholder="Password (min 6 chars)" required minLength={6} value={f.password} onChange={set("password")} />
+      <div className="relative">
+        <input
+          className="input pr-10"
+          type={showPassword ? "text" : "password"}
+          placeholder="Password (min 6 chars)"
+          required
+          minLength={6}
+          value={f.password}
+          onChange={set("password")}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((s) => !s)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+          tabIndex={-1}
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
       <select className="input" value={f.role} onChange={set("role")}>
         <option value="admin">Administrator</option>
         <option value="user">Registered user</option>

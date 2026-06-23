@@ -21,7 +21,8 @@ export async function PATCH(req: NextRequest) {
       .set({
         fullName: data.fullName ?? current.fullName,
         bio: data.bio ?? current.bio,
-        avatar: data.avatar || current.avatar,
+        avatar:
+          data.avatar !== undefined ? data.avatar || null : current.avatar,
       })
       .where(eq(users.id, current.id))
       .returning();

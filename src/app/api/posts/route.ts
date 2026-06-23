@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
         likes: posts.likes,
         commentsCount: posts.commentsCount,
         featured: posts.featured,
+        status: posts.status,
         createdAt: posts.createdAt,
         authorId: posts.authorId,
         authorName: users.fullName,
@@ -133,13 +134,16 @@ export async function POST(req: NextRequest) {
       .returning();
 
     if (post.status === "published") {
+      // Avoid pushing huge uploaded-video data URLs over the socket; the detail
+      // page refetches the full media. External links (YouTube/MP4) stay inline.
+      const liteVideo = post.videoUrl?.startsWith("data:") ? null : post.videoUrl;
       broadcast("new_post", {
         id: post.id,
         title: post.title,
         slug: post.slug,
         excerpt: post.excerpt,
         imageUrl: post.imageUrl,
-        videoUrl: post.videoUrl,
+        videoUrl: liteVideo,
         category: post.category,
         type: post.type,
         views: post.views,

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Loader2, KeyRound, CheckCircle2 } from "lucide-react";
 import { postJSON } from "@/lib/client";
+import PasswordToggleInput from "@/components/PasswordToggleInput";
 
 type Step = "request" | "reset" | "done";
 
@@ -95,25 +96,23 @@ export default function ForgotPasswordForm() {
       {step === "reset" && (
         <form onSubmit={resetPassword} className="space-y-3">
           <Field icon={<Lock className="h-4 w-4" />}>
-            <input
-              className="w-full bg-transparent outline-none"
-              type="password"
+            <PasswordToggleInput
+              value={password}
+              onChange={setPassword}
               placeholder="New password"
               required
               minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </Field>
           <Field icon={<Lock className="h-4 w-4" />}>
-            <input
-              className="w-full bg-transparent outline-none"
-              type="password"
+            <PasswordToggleInput
+              value={confirm}
+              onChange={setConfirm}
               placeholder="Confirm new password"
               required
               minLength={6}
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
             />
           </Field>
           {error && <ErrorBox>{error}</ErrorBox>}

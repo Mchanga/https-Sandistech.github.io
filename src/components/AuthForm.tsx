@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { postJSON } from "@/lib/client";
+import PasswordToggleInput from "@/components/PasswordToggleInput";
 import { useStore } from "@/store/useStore";
 import type { SafeUser } from "@/lib/types";
 
@@ -74,14 +75,12 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           />
         </Field>
         <Field icon={<Lock className="h-4 w-4" />}>
-          <input
-            className="w-full bg-transparent outline-none"
-            type="password"
-            placeholder="Password"
+          <PasswordToggleInput
+            value={password}
+            onChange={setPassword}
             required
             minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
           />
         </Field>
 

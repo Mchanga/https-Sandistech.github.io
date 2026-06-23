@@ -26,6 +26,7 @@ export interface PostListItem {
   rating?: number;
   ratingCount?: number;
   featured?: boolean;
+  status?: string;
   createdAt: string;
   authorName: string | null;
   authorAvatar: string | null;
@@ -35,6 +36,8 @@ export interface PostDetail extends PostListItem {
   content: string;
   authorId: number;
   allowComments?: boolean;
+  subCategory?: string | null;
+  tags?: string | null;
 }
 
 export interface ReviewItem {
