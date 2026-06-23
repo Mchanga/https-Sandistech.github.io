@@ -17,7 +17,7 @@ import VideoEmbed from "@/components/VideoEmbed";
 import RatingReviews from "@/components/RatingReviews";
 import { getJSON, postJSON } from "@/lib/client";
 import { useStore } from "@/store/useStore";
-import { formatNumber, timeAgo } from "@/lib/utils";
+import { formatNumber, timeAgo, sanitizeHtml } from "@/lib/utils";
 import type { PostDetail, CommentItem } from "@/lib/types";
 
 export default function PostPage() {
@@ -139,9 +139,10 @@ export default function PostPage() {
         )
       )}
 
-      <div className="prose-sm mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">
-        {post.content}
-      </div>
+      <div
+        className="post-content mt-4 text-[15px] leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
+      />
 
       {/* action bar */}
       <div className="sticky bottom-20 z-10 mt-6 flex items-center justify-between rounded-2xl border bg-[rgb(var(--background))]/90 p-2 backdrop-blur md:bottom-4">

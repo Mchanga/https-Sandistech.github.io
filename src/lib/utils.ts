@@ -21,6 +21,26 @@ export function formatNumber(n: number): string {
   return String(n);
 }
 
+/**
+ * Strip the broken "replacement" boxes (U+FFFD) that appear when content was
+ * pasted with characters that didn't survive an encoding step.
+ */
+export function cleanText(input: string): string {
+  return input.replace(/\uFFFD/g, "").replace(/[ \t]{2,}/g, " ");
+}
+
+/**
+ * Render admin rich-text safely. Content is authored by admins only, but we
+ * still drop scripts, styles and inline event handlers as defence in depth,
+ * and remove the U+FFFD boxes so posts read cleanly.
+ */
+export function sanitizeHtml(input: string): string {
+  return cleanText(input)
+    .replace(/<\/?(script|style|iframe|object|embed)[^>]*>/gi, "")
+    .replace(/ on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*')/gi, "");
+}
+
 export function timeAgo(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const seconds = Math.floor((Date.now() - d.getTime()) / 1000);

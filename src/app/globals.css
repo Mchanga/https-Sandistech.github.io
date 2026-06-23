@@ -91,17 +91,28 @@ body {
 }
 
 /* Rich text editor content */
-.prose-editor h3 {
+.prose-editor h3,
+.post-content h3 {
   @apply mb-1 mt-2 text-base font-bold;
 }
-.prose-editor ul {
+.prose-editor ul,
+.post-content ul {
   @apply list-disc pl-5;
 }
-.prose-editor ol {
+.prose-editor ol,
+.post-content ol {
   @apply list-decimal pl-5;
 }
-.prose-editor a {
+.prose-editor a,
+.post-content a {
   @apply text-brand-600 underline;
+}
+.post-content p,
+.post-content div {
+  @apply mb-3;
+}
+.post-content img {
+  @apply my-3 max-w-full rounded-xl;
 }
 
 /* Hide scrollbars for horizontal chip rows */
